@@ -1,5 +1,6 @@
 ## Requirements
 - [Rust](https://github.com/rust-lang/rust)
+- [notify-send](https://ss64.com/bash/notify-send.html)
 
 ## Instalation
 1. Download or clone this repository and navigate to the project folder.
