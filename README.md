@@ -13,3 +13,4 @@
 ## Other solutions
 - [status_diplay_notify_send.py](https://github.com/cmus/cmus/wiki/status_diplay_notify_send.py)
 - [CmusNotify (go)](https://github.com/sebojanko/CmusNotify)
+- [cmus_notify (bash)](https://gist.github.com/VonHeikemen/1eb9c0f9edef923100fbab41a65049a2)
