@@ -4,4 +4,9 @@ version = "0.1.0"
 authors = ["Heiker Curiel <heikercuriel@gmail.com>"]
 edition = "2018"
 
+[profile.release]
+opt-level = 'z' 
+lto = true
+codegen-units = 1
+
 [dependencies]
