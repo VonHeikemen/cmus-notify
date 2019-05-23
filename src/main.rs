@@ -8,7 +8,44 @@ struct Notification<'a> {
     body: String,
 }
 
-fn process_args(args: &Vec<String>) -> HashMap<String, String> {
+impl<'a> Notification<'a> {
+    fn new(args: &HashMap<String, String>) -> Notification {
+        fn not_empty(val: &&String) -> bool {
+            !val.is_empty()
+        }
+
+        let file = || {
+            args.get("file")
+                .filter(not_empty)
+                .map(|str| match str.rfind('/') {
+                    Some(val) => &str.split_at(val).1[1..],
+                    None => str.as_str(),
+                })
+        };
+
+        let title = args.get("title").filter(not_empty).map(|str| str.as_str());
+
+        let artist = args
+            .get("artist")
+            .filter(not_empty)
+            .or(Some(&String::from("Unknown")))
+            .map(|str| format!("<b>Artist:</b> {}", str));
+
+        let mut message = artist.unwrap();
+
+        args.get("album")
+            .filter(not_empty)
+            .map(|str| format!("\n<b>Album:</b> {}", str))
+            .map(|str| message.push_str(&str));
+
+        Notification {
+            title: title.or_else(file).unwrap_or("Unknown song"),
+            body: message,
+        }
+    }
+}
+
+fn parse_args(args: &Vec<String>) -> HashMap<String, String> {
     let mut result = HashMap::new();
     let range = 3..args.len();
     let empty = String::from("");
@@ -21,46 +58,12 @@ fn process_args(args: &Vec<String>) -> HashMap<String, String> {
     result
 }
 
-fn get_data(args: &HashMap<String, String>) -> Notification {
-    fn not_empty(val: &&String) -> bool {
-        !val.is_empty()
-    }
-
-    let file = || args
-        .get("file")
-        .filter(not_empty)
-        .map(|str| match str.rfind('/') {
-            Some(val) => &str.split_at(val).1[1..],
-            None => str.as_str(),
-        });
-
-    let title = args.get("title").filter(not_empty).map(|str| str.as_str());
-
-    let artist = args
-        .get("artist")
-        .filter(not_empty)
-        .or(Some(&String::from("Unknown")))
-        .map(|str| format!("<b>Artist:</b> {}", str));
-
-    let mut message = artist.unwrap();
-
-    args.get("album")
-        .filter(not_empty)
-        .map(|str| format!("\n<b>Album:</b> {}", str))
-        .map(|str| message.push_str(&str));
-
-    Notification {
-        title: title.or_else(file).unwrap_or("Unknown song"),
-        body: message,
-    }
-}
-
 fn show_notification(args: &Vec<String>) -> Result<Child, Error> {
-    let arg_list = process_args(&args);
-    let data = get_data(&arg_list);
+    let arg_list = parse_args(&args);
+    let notification = Notification::new(&arg_list);
     Command::new("notify-send")
-        .arg(data.title)
-        .arg(data.body)
+        .arg(notification.title)
+        .arg(notification.body)
         .spawn()
 }
 
