@@ -9,6 +9,8 @@
 > :set status_display_program=/project-folder/target/release/cmus-notify
 4. Save the changes using:
 > :save
+5. (Optional) Minimize binary size with the [strip](https://linux.die.net/man/1/strip) command.
+> strip /project-folder/target/release/cmus-notify
 
 ## Other solutions
 - [status_diplay_notify_send.py](https://github.com/cmus/cmus/wiki/status_diplay_notify_send.py)
