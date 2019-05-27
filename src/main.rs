@@ -18,7 +18,7 @@ impl<'a> Notification<'a> {
             args.get("file")
                 .filter(not_empty)
                 .map(|str| match str.rfind('/') {
-                    Some(val) => &str.split_at(val).1[1..],
+                    Some(position) => &str.split_at(position).1[1..],
                     None => str.as_str(),
                 })
         };
@@ -31,21 +31,30 @@ impl<'a> Notification<'a> {
             .or(Some(&String::from("Unknown")))
             .map(|str| format!("<b>Artist:</b> {}", str));
 
-        let mut message = artist.unwrap();
-
-        args.get("album")
+        let album = args
+            .get("album")
             .filter(not_empty)
-            .map(|str| format!("\n<b>Album:</b> {}", str))
-            .map(|str| message.push_str(&str));
+            .map(|str| format!("<b>Album:</b> {}", str));
+
+        let message = album
+            .iter()
+            .fold(artist.unwrap(), |acc, val| format!("{}\n{}", acc, val));
 
         Notification {
             title: title.or_else(file).unwrap_or("Unknown song"),
             body: message,
         }
     }
+
+    fn show(self) -> Result<Child, Error> {
+        Command::new("notify-send")
+            .arg(self.title)
+            .arg(self.body)
+            .spawn()
+    }
 }
 
-fn parse_args(args: &Vec<String>) -> HashMap<String, String> {
+fn parse_args(args: &[String]) -> HashMap<String, String> {
     let mut result = HashMap::new();
     let range = 3..args.len();
     let empty = String::from("");
@@ -58,19 +67,16 @@ fn parse_args(args: &Vec<String>) -> HashMap<String, String> {
     result
 }
 
-fn show_notification(args: &Vec<String>) -> Result<Child, Error> {
-    let arg_list = parse_args(&args);
-    let notification = Notification::new(&arg_list);
-    Command::new("notify-send")
-        .arg(notification.title)
-        .arg(notification.body)
-        .spawn()
-}
-
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    args.get(1..3)
+    let is_playing = args
+        .get(1..3)
         .filter(|val| val == &["status", "playing"])
-        .and_then(|_| show_notification(&args).ok());
+        .is_some();
+
+    if is_playing {
+        let args = parse_args(&args);
+        Notification::new(&args).show().ok();
+    }
 }
